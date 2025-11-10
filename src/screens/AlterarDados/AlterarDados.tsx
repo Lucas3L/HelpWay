@@ -17,7 +17,7 @@ import InputDate from '../../components/InputDate';
 import InputPassword from '../../components/InputPassword';
 import Button from '../../components/Button';
 import styles from '../../styles/register';
-import useAlterarDadosViewModel from './useAlterarDadosViewModel'; // <-- IMPORTA O VIEWMODEL
+import useAlterarDadosViewModel from './useAlterarDadosViewModel'; 
 
 export default function AlterarDados() { // <-- EXPORTA UM COMPONENTE DE UI
   const vm = useAlterarDadosViewModel(); // <-- CONSOME O VIEWMODEL
