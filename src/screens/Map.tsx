@@ -12,14 +12,15 @@ import type { RootStackParamList } from '../navigation';
 import type { LocationObjectCoords } from 'expo-location';
 import { api } from '../services/api';
 import { useLocation } from '../context/LocationContext';
+import { Donation as Campanha } from '../context/DonationsContext'; // Importa o tipo Campanha
 
-type ApiDonation = {
+// O tipo de dado que o mapa vai usar
+type CampanhaNoMapa = {
   id: string;
-  title: string;
-  location: { latitude: number; longitude: number };
+  titulo: string;
+  localizacao: { latitude: number; longitude: number };
+  distance?: string;
 };
-
-type DonationWithDistance = ApiDonation & { distance?: string };
 
 const getDistanceFromLatLonInKm = (
   lat1: number, lon1: number, lat2: number, lon2: number
@@ -48,8 +49,8 @@ export default function Map() {
   const mapRef = useRef<MapView>(null);
   const [location, setLocation] = useState<LocationObjectCoords | null>(null);
   const [region, setRegion] = useState<Region | null>(null);
-  const [apiDonations, setApiDonations] = useState<ApiDonation[]>([]);
-  const [donationsWithDistance, setDonationsWithDistance] = useState<DonationWithDistance[]>([]);
+  const [apiCampaigns, setApiCampaigns] = useState<CampanhaNoMapa[]>([]);
+  const [campaignsWithDistance, setCampaignsWithDistance] = useState<CampanhaNoMapa[]>([]);
   const [routeCoords, setRouteCoords] = useState<{ latitude: number; longitude: number }[]>([]);
   const [activeRouteDonationId, setActiveRouteDonationId] = useState<string | null>(null);
 
@@ -73,53 +74,59 @@ export default function Map() {
   }, []);
 
   useEffect(() => {
-    const fetchDonations = async () => {
+    const fetchCampaigns = async () => {
       try {
-        const dataFromApi = await api.getDonations();
-        const donationsWithLocation = dataFromApi.filter((d: any) => d.localizacao);
+        // 1. CHAMA A NOVA FUNÇÃO DA API
+        const dataFromApi = await api.getCampanhas();
         
-        const formattedData: ApiDonation[] = donationsWithLocation.map((d: any) => ({
-          id: String(d.id),
-          title: d.titulo,
-          location: {
-            latitude: d.localizacao.latitude,
-            longitude: d.localizacao.longitude,
+        // 2. Filtra apenas as que têm localização
+        const campaignsWithLocation = dataFromApi.filter((c: Campanha) => c.localizacao);
+        
+        // 3. Formata para o tipo que o mapa espera
+        const formattedData: CampanhaNoMapa[] = campaignsWithLocation.map((c: Campanha) => ({
+          id: String(c.id),
+          titulo: c.titulo,
+          localizacao: {
+            latitude: c.localizacao!.latitude,
+            longitude: c.localizacao!.longitude,
           },
         }));
         
-        setApiDonations(formattedData);
+        setApiCampaigns(formattedData);
       } catch (err: any) {
         console.error(err);
-        Alert.alert('Erro', 'Não foi possível carregar as doações.');
+        Alert.alert('Erro', 'Não foi possível carregar as campanhas no mapa.');
       }
     };
     if (!isSelectionMode) {
-      fetchDonations();
+      fetchCampaigns();
     }
   }, [isSelectionMode]);
 
   useEffect(() => {
-    if (location && apiDonations.length) {
-      const updated = apiDonations.map(d => {
+    if (location && apiCampaigns.length) {
+      const updated = apiCampaigns.map(c => {
+        // 4. Usa o campo 'localizacao'
         const distKm = getDistanceFromLatLonInKm(
           location.latitude, location.longitude,
-          d.location.latitude, d.location.longitude
+          c.localizacao.latitude, c.localizacao.longitude
         );
-        return { ...d, distance: `${distKm.toFixed(2)} km` };
+        return { ...c, distance: `${distKm.toFixed(2)} km` };
       });
-      setDonationsWithDistance(updated.sort((a, b) => parseFloat(a.distance!) - parseFloat(b.distance!)));
+      setCampaignsWithDistance(updated.sort((a, b) => parseFloat(a.distance!) - parseFloat(b.distance!)));
     }
-  }, [location, apiDonations]);
+  }, [location, apiCampaigns]);
 
-  const handleDrawRoute = async (d: DonationWithDistance) => {
+  const handleDrawRoute = async (c: CampanhaNoMapa) => {
     if (!location) return;
-    if (activeRouteDonationId === d.id) {
+    if (activeRouteDonationId === c.id) {
       setRouteCoords([]);
       setActiveRouteDonationId(null);
       return;
     }
     try {
-        const url = `http://router.project-osrm.org/route/v1/driving/${location.longitude},${location.latitude};${d.location.longitude},${d.location.latitude}?overview=full&geometries=geojson`;
+        // 5. Usa o campo 'localizacao'
+        const url = `http://router.project-osrm.org/route/v1/driving/${location.longitude},${location.latitude};${c.localizacao.longitude},${c.localizacao.latitude}?overview=full&geometries=geojson`;
         const resp = await fetch(url);
         const json = await resp.json();
         
@@ -128,7 +135,7 @@ export default function Map() {
                 latitude: lat, longitude: lng
             }));
             setRouteCoords(coords);
-            setActiveRouteDonationId(d.id);
+            setActiveRouteDonationId(c.id);
             mapRef.current?.fitToCoordinates(coords, {
                 edgePadding: { top: 100, bottom: 250, left: 50, right: 50 },
                 animated: true,
@@ -189,12 +196,13 @@ export default function Map() {
         showsUserLocation
         onPress={handleMapPress}
       >
-        {!isSelectionMode && donationsWithDistance.map(d => (
+        {/* 6. Renderiza os markers com os dados da Campanha */}
+        {!isSelectionMode && campaignsWithDistance.map(c => (
           <Marker
-            key={d.id}
-            coordinate={d.location}
-            title={d.title}
-            pinColor={activeRouteDonationId === d.id ? 'tomato' : 'indigo'}
+            key={c.id}
+            coordinate={c.localizacao}
+            title={c.titulo}
+            pinColor={activeRouteDonationId === c.id ? 'tomato' : 'indigo'}
           />
         ))}
 
@@ -229,19 +237,20 @@ export default function Map() {
             style={[styles.cardsScrollView, { bottom: insets.bottom + 90 }]}
             contentContainerStyle={styles.cardsContainer}
           >
-            {donationsWithDistance.map(d => (
-              <View key={d.id} style={styles.card}>
-                <Text style={styles.cardTitle} numberOfLines={2}>{d.title}</Text>
-                <Text style={styles.cardSubtitle}>{d.distance}</Text>
+            {/* 7. Renderiza os cards com os dados da Campanha */}
+            {campaignsWithDistance.map(c => (
+              <View key={c.id} style={styles.card}>
+                <Text style={styles.cardTitle} numberOfLines={2}>{c.titulo}</Text>
+                <Text style={styles.cardSubtitle}>{c.distance}</Text>
                 <View style={styles.cardButtonsContainer}>
-                  <TouchableOpacity style={styles.cardButton} onPress={() => handleDrawRoute(d)}>
+                  <TouchableOpacity style={styles.cardButton} onPress={() => handleDrawRoute(c)}>
                     <Text style={styles.cardButtonText}>
-                      {activeRouteDonationId === d.id ? 'Limpar Rota' : 'Ver Rota'}
+                      {activeRouteDonationId === c.id ? 'Limpar Rota' : 'Ver Rota'}
                     </Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={[styles.cardButton, { backgroundColor: '#fff', borderWidth: 1, borderColor: '#4B4DED' }]}
-                    onPress={() => handleGoToLocation(d.location)}
+                    onPress={() => handleGoToLocation(c.localizacao)}
                   >
                     <Text style={[styles.cardButtonText, { color: '#4B4DED' }]}>Ir ao Local</Text>
                   </TouchableOpacity>

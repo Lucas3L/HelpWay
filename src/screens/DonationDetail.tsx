@@ -7,39 +7,23 @@ import ProgressBar from '../components/ProgressBar';
 import styles from '../styles/donationDetail';
 import { Ionicons } from '@expo/vector-icons';
 import { api } from '../services/api';
+import { Donation as Campanha } from '../context/DonationsContext'; 
 
 type Props = NativeStackScreenProps<RootStackParamList, 'DonationDetail'>;
 
-type DonationAPI = {
-  id: number;
-  titulo: string;
-  subtitulo: string;
-  descricao: string;
-  imagem_base64: string;
-  meta_doacoes: number;
-  valor_levantado: number;
-  fg_dinheiro: boolean;
-  fg_alimentacao: boolean;
-  fg_vestuario: boolean;
-  localizacao: {
-    latitude: number;
-    longitude: number;
-  } | null;
-};
-
 export default function DonationDetailScreen({ route, navigation }: Props) {
-  const { donation } = route.params;
-  const [apiData, setApiData] = useState<DonationAPI | null>(null);
+  const { donation } = route.params; 
+  const [apiData, setApiData] = useState<Campanha | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchDonation = async () => {
       try {
-        const data = await api.getDonationById(Number(donation.id));
+        const data = await api.getCampanhaById(Number(donation.id));
         setApiData(data);
       } catch (error: any) {
-        console.error('Falha ao obter doação', error);
-        Alert.alert('Erro', 'Não foi possível carregar os dados da doação.');
+        console.error('Falha ao obter campanha', error);
+        Alert.alert('Erro', 'Não foi possível carregar os dados da campanha.');
       } finally {
         setLoading(false);
       }
@@ -49,7 +33,9 @@ export default function DonationDetailScreen({ route, navigation }: Props) {
   }, [donation.id]);
 
   const handleDonate = () => {
-    navigation.navigate('DonationPay', { donation });
+    if (apiData) {
+      navigation.navigate('DonationPay', { campaign: apiData });
+    }
   };
 
   if (loading) {
@@ -63,7 +49,7 @@ export default function DonationDetailScreen({ route, navigation }: Props) {
   if (!apiData) {
     return (
       <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-        <Text style={{ fontSize: 16, color: '#666' }}>Dados da doação indisponíveis.</Text>
+        <Text style={{ fontSize: 16, color: '#666' }}>Dados da campanha indisponíveis.</Text>
         <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginTop: 20 }}>
           <Text style={{ color: '#4B4DED' }}>Voltar</Text>
         </TouchableOpacity>
@@ -71,7 +57,9 @@ export default function DonationDetailScreen({ route, navigation }: Props) {
     );
   }
 
-  const progress = apiData.meta_doacoes > 0 ? apiData.valor_levantado / apiData.meta_doacoes : 0;
+  const meta = apiData.meta_doacoes || 1;
+  const arrecadado = apiData.valor_levantado || 0;
+  const progress = meta > 0 ? arrecadado / meta : 0;
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -107,10 +95,10 @@ export default function DonationDetailScreen({ route, navigation }: Props) {
         <View style={styles.progressContainer}>
           <View style={styles.progressInfo}>
             <Text style={styles.raisedText}>
-              R$ {apiData.valor_levantado.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              R$ {arrecadado.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
             </Text>
             <Text style={styles.goalText}>
-              Arrecadado de R$ {apiData.meta_doacoes.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              Arrecadado de R$ {(apiData.meta_doacoes || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
             </Text>
           </View>
           <ProgressBar progress={progress} />

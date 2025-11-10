@@ -18,17 +18,28 @@ import TabBar from '../components/TabBar';
 import { styles } from '../styles/searchDonation';
 import { RootStackParamList } from '../navigation';
 import { api } from '../services/api';
-import { type Donation } from '../context/DonationsContext';
+import { Donation as Campanha } from '../context/DonationsContext'; 
 
 type NavProp = NativeStackNavigationProp<RootStackParamList, 'SearchDonation'>;
 type FilterType = 'REGIONAL' | 'NACIONAL' | 'MUNDIAL';
+
+type CardDataType = {
+  id: string;
+  title: string;
+  subtitle?: string;
+  raised: number;
+  goal: number;
+  imageUri: string;
+  types: string[];
+  apiData: Campanha; 
+};
 
 export default function SearchDonationScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavProp>();
   const isFocused = useIsFocused();
 
-  const [allDonations, setAllDonations] = useState<Donation[]>([]);
+  const [allCampaigns, setAllCampaigns] = useState<Campanha[]>([]); 
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [activeFilter, setActiveFilter] = useState<FilterType>('MUNDIAL');
@@ -53,43 +64,27 @@ export default function SearchDonationScreen() {
   }, []);
 
   useEffect(() => {
-    const fetchDonations = async () => {
+    const fetchCampaigns = async () => {
       setIsLoading(true);
       try {
-        const donationsFromApi = await api.getDonations();
-        const activeDonations = donationsFromApi.filter(
-          (d: any) => d.meta_doacoes > d.valor_levantado
+        const campaignsFromApi = await api.getCampanhas(); 
+        
+        // --- CORREÇÃO APLICADA AQUI ---
+        // Trata meta_doacoes e valor_levantado nulos como 0
+        const activeCampaigns = campaignsFromApi.filter(
+          (c: Campanha) => (c.meta_doacoes || 0) > (c.valor_levantado || 0)
         );
-        const formattedDonations: Donation[] = activeDonations.map((apiDonation: any) => ({
-          id: String(apiDonation.id),
-          title: apiDonation.titulo,
-          subtitle: apiDonation.subtitulo,
-          raised: apiDonation.valor_levantado,
-          goal: apiDonation.meta_doacoes,
-          imageUri: apiDonation.imagem_base64,
-          description: apiDonation.descricao,
-          types: [
-            apiDonation.fg_dinheiro && 'Dinheiro',
-            apiDonation.fg_alimentacao && 'Alimentação',
-            apiDonation.fg_vestuario && 'Utensílio',
-          ].filter(Boolean) as string[],
-          location: apiDonation.localizacao
-            ? {
-              latitude: apiDonation.localizacao.latitude,
-              longitude: apiDonation.localizacao.longitude,
-            }
-            : { latitude: 0, longitude: 0 },
-        }));
-        setAllDonations(formattedDonations);
+        
+        setAllCampaigns(activeCampaigns);
       } catch (error: any) {
-        Alert.alert('Erro', 'Não foi possível carregar as doações.');
+        Alert.alert('Erro', 'Não foi possível carregar as campanhas.');
       } finally {
         setIsLoading(false);
       }
     };
 
     if (isFocused) {
-      fetchDonations();
+      fetchCampaigns();
     }
   }, [isFocused]);
 
@@ -104,10 +99,10 @@ export default function SearchDonationScreen() {
   };
 
   useEffect(() => {
-    if (allDonations.length > 0 && userLocation) {
-      const distances = allDonations
-        .filter(d => d.location.latitude !== 0)
-        .map(d => getDistanceKm(userLocation.latitude, userLocation.longitude, d.location.latitude, d.location.longitude));
+    if (allCampaigns.length > 0 && userLocation) {
+      const distances = allCampaigns
+        .filter(c => c.localizacao && c.localizacao.latitude !== 0)
+        .map(c => getDistanceKm(userLocation.latitude, userLocation.longitude, c.localizacao!.latitude, c.localizacao!.longitude));
 
       if (distances.length > 0) {
         const furthestDonation = Math.max(...distances);
@@ -117,45 +112,60 @@ export default function SearchDonationScreen() {
         setDistanceFilter(finalMax);
       }
     }
-  }, [allDonations, userLocation]);
+  }, [allCampaigns, userLocation]);
 
   const handleFilterChange = (value: FilterType) => {
     setActiveFilter(value);
-    if (value === 'REGIONAL') {
-      setDistanceFilter(50);
-    } else if (value === 'NACIONAL') {
-      setDistanceFilter(2000);
-    } else if (value === 'MUNDIAL') {
-      setDistanceFilter(sliderMaximumValue);
-    }
+    if (value === 'REGIONAL') setDistanceFilter(50);
+    else if (value === 'NACIONAL') setDistanceFilter(2000);
+    else if (value === 'MUNDIAL') setDistanceFilter(sliderMaximumValue);
   };
 
-  const filteredDonations = useMemo(() => {
-    return allDonations.filter((donation) => {
-      const searchLower = search.toLowerCase();
-      const matchesSearch =
-        donation.title.toLowerCase().includes(searchLower) ||
-        (donation.subtitle?.toLowerCase() ?? '').includes(searchLower);
+  const filteredCampaigns = useMemo((): CardDataType[] => {
+    return allCampaigns
+      .map((campaign) => {
+        const types = [
+          campaign.fg_dinheiro && 'Dinheiro',
+          campaign.fg_alimentacao && 'Alimentação',
+          campaign.fg_vestuario && 'Utensílio',
+        ].filter(Boolean) as string[];
+        
+        return {
+          id: campaign.id,
+          title: campaign.titulo,
+          subtitle: campaign.subtitulo,
+          raised: campaign.valor_levantado,
+          goal: campaign.meta_doacoes,
+          imageUri: campaign.imagem_base64,
+          types: types,
+          apiData: campaign,
+        };
+      })
+      .filter((campaign) => {
+        const searchLower = search.toLowerCase();
+        const matchesSearch =
+          campaign.title.toLowerCase().includes(searchLower) ||
+          (campaign.subtitle?.toLowerCase() ?? '').includes(searchLower);
 
-      const distance =
-        userLocation && donation.location?.latitude !== 0
-          ? getDistanceKm(
-            userLocation.latitude,
-            userLocation.longitude,
-            donation.location.latitude,
-            donation.location.longitude
-          )
-          : Infinity;
+        const distance =
+          userLocation && campaign.apiData.localizacao?.latitude !== 0
+            ? getDistanceKm(
+                userLocation.latitude,
+                userLocation.longitude,
+                campaign.apiData.localizacao!.latitude,
+                campaign.apiData.localizacao!.longitude
+              )
+            : Infinity;
 
-      const withinDistance = distance <= distanceFilter;
+        const withinDistance = distance <= distanceFilter;
 
-      const matchesType =
-        selectedTypes.length === 0 ||
-        selectedTypes.some((type) => donation.types.includes(type));
+        const matchesType =
+          selectedTypes.length === 0 ||
+          selectedTypes.some((type) => campaign.types.includes(type));
 
-      return matchesSearch && withinDistance && matchesType;
-    });
-  }, [allDonations, search, distanceFilter, selectedTypes, userLocation]);
+        return matchesSearch && withinDistance && matchesType;
+      });
+  }, [allCampaigns, search, distanceFilter, selectedTypes, userLocation]);
 
   return (
     <SafeAreaView style={[styles.container, { paddingTop: Platform.OS === 'android' ? insets.top : 0 }]}>
@@ -179,12 +189,14 @@ export default function SearchDonationScreen() {
           <ActivityIndicator size="large" color="#4F6AF6" style={{ flex: 1 }} />
         ) : (
           <FlatList
-            data={filteredDonations}
+            data={filteredCampaigns}
             keyExtractor={(item) => item.id}
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.listContent}
             renderItem={({ item }) => (
-              <TouchableOpacity onPress={() => navigation.navigate('DonationDetail', { donation: item })}>
+              <TouchableOpacity onPress={() => navigation.navigate('DonationDetail', { 
+                donation: item.apiData
+                })}>
                 <DonationCard
                   imageUri={item.imageUri ? `data:image/jpeg;base64,${item.imageUri}` : ''}
                   title={item.title}
@@ -197,7 +209,7 @@ export default function SearchDonationScreen() {
             )}
             ListEmptyComponent={
               <View style={styles.emptyListContainer}>
-                <Text style={styles.emptyListText}>Nenhuma doação encontrada para os filtros selecionados.</Text>
+                <Text style={styles.emptyListText}>Nenhuma campanha encontrada para os filtros.</Text>
               </View>
             }
           />

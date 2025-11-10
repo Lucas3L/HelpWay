@@ -22,17 +22,20 @@ import { colors } from '../styles';
 import styles from '../styles/addDonation';
 import { api } from '../services/api';
 import { useLocation } from '../context/LocationContext';
+import { useAuth } from '../context/AuthContext';
 
 type NavProp = NativeStackNavigationProp<RootStackParamList, 'AddDonation'>;
 
 export default function AddDonationScreen() {
   const navigation = useNavigation<NavProp>();
   const { selectedLocation, setSelectedLocation } = useLocation();
+  const { user } = useAuth();
 
   const [title, setTitle] = useState('');
   const [need, setNeed] = useState('');
   const [responsible, setResponsible] = useState('');
   const [types, setTypes] = useState<string[]>([]);
+  const [chavePix, setChavePix] = useState('');
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [imageBase64, setImageBase64] = useState<string | null>(null);
   const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(null);
@@ -69,39 +72,47 @@ export default function AddDonationScreen() {
   }
 
   function handleLocationSelect() {
-  navigation.navigate('Map', { isSelectionMode: true });
-}
+   navigation.navigate('Map', { isSelectionMode: true });
+  }
 
   async function handleSubmit() {
+    if (!user) {
+      Alert.alert('Erro', 'Você precisa estar logado para criar uma campanha.');
+      navigation.navigate('Login');
+      return;
+    }
+
     if (!title || !need || !responsible || !types.length || !description) {
       Alert.alert('Atenção', 'Preencha todos os campos obrigatórios.');
       return;
     }
+    
+    if (types.includes('Dinheiro') && !chavePix) {
+      Alert.alert('Atenção', 'Se a doação aceita dinheiro, a chave PIX é obrigatória.');
+      return;
+    }
 
-    const donationData = {
+    const campaignData = {
+      id_organizador: user.id,
       titulo: title,
       subtitulo: responsible,
       descricao: description,
       imagem_base64: imageBase64 || '',
+      chave_pix: types.includes('Dinheiro') ? chavePix : null,
       meta_doacoes: Number(need),
-      valor_levantado: 0,
       fg_dinheiro: types.includes('Dinheiro'),
       fg_alimentacao: types.includes('Alimentação'),
       fg_vestuario: types.includes('Utensílios/Vestimenta'),
+      localizacao: location ? { latitude: location.latitude, longitude: location.longitude } : null,
     };
 
     try {
-      const createdDonation = await api.createDonation(donationData);
-
-      if (location) {
-        await api.updateDonationLocation(createdDonation.id, location);
-      }
-
-      Alert.alert('Sucesso!', 'Doação criada com sucesso!');
+      await api.criarCampanha(campaignData);
+      Alert.alert('Sucesso!', 'Campanha criada com sucesso!');
       navigation.goBack();
     } catch (error: any) {
       console.error(error);
-      Alert.alert('Erro', error.message || 'Não foi possível criar a doação.');
+      Alert.alert('Erro', error.message || 'Não foi possível criar a campanha.');
     }
   }
 
@@ -118,7 +129,7 @@ export default function AddDonationScreen() {
               <Ionicons name="arrow-back" size={24} color="black" />
             </TouchableOpacity>
 
-            <Text style={styles.title}>Cadastrar Doação</Text>
+            <Text style={styles.title}>Solicitar Doação</Text>
 
             <TouchableOpacity onPress={pickImage} style={styles.imagePicker}>
               {imageUri ? (
@@ -136,7 +147,7 @@ export default function AddDonationScreen() {
             />
             <Input
               icon="money-bill-wave"
-              placeholder="Valor Necessario"
+              placeholder="Valor Necessario (Meta)"
               keyboardType="numeric"
               value={need}
               onChangeText={setNeed}
@@ -177,6 +188,16 @@ export default function AddDonationScreen() {
               ))}
             </View>
 
+            {types.includes('Dinheiro') && (
+              <Input
+                icon="key"
+                placeholder="Chave PIX (Email, CNPJ, Celular, etc.)"
+                value={chavePix}
+                onChangeText={setChavePix}
+                autoCapitalize="none"
+              />
+            )}
+
             <TouchableOpacity onPress={handleLocationSelect} style={styles.locationButton}>
               <Text style={styles.locationButtonText}>
                 {location ? 'Localização selecionada' : 'Selecionar Localização no Mapa'}
@@ -184,7 +205,7 @@ export default function AddDonationScreen() {
             </TouchableOpacity>
 
             <TouchableOpacity onPress={handleSubmit} style={styles.submitButton}>
-              <Text style={styles.submitButtonText}>Criar Doação</Text>
+              <Text style={styles.submitButtonText}>Criar Campanha</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>

@@ -18,21 +18,12 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
+import { Donation as Campanha } from '../context/DonationsContext';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'DonationPay'>;
 
-type DonationAPI = {
-  id: string;
-  titulo: string;
-  subtitulo: string;
-  descricao: string;
-  imagem_url: string;
-  meta_doacoes: number;
-  valor_levantado: number;
-};
-
 const DonationPay: React.FC<Props> = ({ navigation, route }) => {
-  const { donation } = route.params;
+  const { campaign } = route.params;
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
 
@@ -40,7 +31,7 @@ const DonationPay: React.FC<Props> = ({ navigation, route }) => {
   const [cpf, setCpf] = useState('');
   const [email, setEmail] = useState('');
   const [amount, setAmount] = useState('25');
-  const [donationData, setDonationData] = useState<DonationAPI | null>(null);
+  const [donationData, setDonationData] = useState<Campanha | null>(null);
   const [loading, setLoading] = useState(true);
 
   const suggestedAmounts = ['10', '25', '50'];
@@ -53,18 +44,18 @@ const DonationPay: React.FC<Props> = ({ navigation, route }) => {
 
     const fetchDonation = async () => {
       try {
-        const data = await api.getDonationById(Number(donation.id));
+        const data = await api.getCampanhaById(Number(campaign.id));
         setDonationData(data);
       } catch (error) {
         console.error(error);
-        Alert.alert('Erro', 'Não foi possível carregar os dados da doação.');
+        Alert.alert('Erro', 'Não foi possível carregar os dados da campanha.');
       } finally {
         setLoading(false);
       }
     };
 
     fetchDonation();
-  }, [donation.id, user]);
+  }, [campaign.id, user]);
 
   const handleAmountChange = (text: string) => {
     const formattedText = text.replace(/[^0-9,]/g, '');
@@ -79,7 +70,7 @@ const DonationPay: React.FC<Props> = ({ navigation, route }) => {
     }
 
     navigation.navigate('DonationPix', {
-      donationId: donation.id,
+      donationId: campaign.id,
       donationAmount: valorNumerico.toString(),
       donationName: donationData?.titulo || '',
     });
@@ -103,7 +94,7 @@ const DonationPay: React.FC<Props> = ({ navigation, route }) => {
             >
                 <Ionicons name="arrow-back" size={24} color="#333" />
             </TouchableOpacity>
-            <Text style={{ textAlign: 'center', fontSize: 16, color: '#666' }}>Dados da doação indisponíveis.</Text>
+            <Text style={{ textAlign: 'center', fontSize: 16, color: '#666' }}>Dados da campanha indisponíveis.</Text>
         </View>
       </SafeAreaView>
     );

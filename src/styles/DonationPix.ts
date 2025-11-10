@@ -77,6 +77,15 @@ export default StyleSheet.create({
     marginBottom: 12,
     marginTop: 10,
   },
+  // ESTILO ADICIONADO AQUI
+  pixKeyText: {
+    fontSize: 14,
+    color: '#333',
+    fontWeight: '500',
+    textAlign: 'center',
+    marginBottom: 10,
+    paddingHorizontal: 10,
+  },
   instructionText: {
     fontSize: 14,
     color: '#475569',

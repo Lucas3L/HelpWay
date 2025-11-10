@@ -1,6 +1,5 @@
 import React, { useEffect } from 'react';
 import {
-  SafeAreaView,
   ScrollView,
   View,
   Text,
@@ -8,10 +7,10 @@ import {
   Image,
   ActivityIndicator,
 } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Feather } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { RootStackParamList } from '../navigation';
 import styles from '../styles/conta';
 import { colors } from '../styles';
@@ -65,6 +64,7 @@ export default function ContaScreen() {
         </View>
 
         <View style={styles.menuSection}>
+          
           <TouchableOpacity
             style={styles.menuItem}
             onPress={() => navigation.navigate('AlterarDados')}
@@ -76,21 +76,45 @@ export default function ContaScreen() {
             <Feather name="chevron-right" size={20} color={colors.primary} />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.menuItem}>
-            <Feather name="clock" size={24} color={colors.primary} />
-            <View style={styles.menuTextContainer}>
-              <Text style={styles.menuTitle}>Histórico de Doações</Text>
-            </View>
-            <Feather name="chevron-right" size={20} color={colors.primary} />
-          </TouchableOpacity>
+          {/* SE FOR DOADOR (TIPO 1), MOSTRA O HISTÓRICO DELE */}
+          {user.tp_usuario === 1 && (
+            <TouchableOpacity 
+              style={styles.menuItem}
+              onPress={() => navigation.navigate('HistoricoDoacoes', { campaignId: undefined })} // Passa undefined
+            >
+              <Feather name="clock" size={24} color={colors.primary} />
+              <View style={styles.menuTextContainer}>
+                <Text style={styles.menuTitle}>Histórico de Doações</Text>
+              </View>
+              <Feather name="chevron-right" size={20} color={colors.primary} />
+            </TouchableOpacity>
+          )}
 
-          <TouchableOpacity style={styles.menuItem}>
-            <Feather name="award" size={24} color={colors.primary} />
-            <View style={styles.menuTextContainer}>
-              <Text style={styles.menuTitle}>Certificados</Text>
-            </View>
-            <Feather name="chevron-right" size={20} color={colors.primary} />
-          </TouchableOpacity>
+          {/* SE FOR ORGANIZADOR (TIPO 2), MOSTRA OS MENUS DELE */}
+          {user.tp_usuario === 2 && (
+            <>
+              <TouchableOpacity
+                style={styles.menuItem}
+                onPress={() => navigation.navigate('AddDonation')}
+              >
+                <Feather name="plus-circle" size={24} color={colors.primary} />
+                <Text style={[styles.menuTitle, { marginLeft: 12, flex: 1 }]}>
+                  Solicitar Nova Doação
+                </Text>
+                <Feather name="chevron-right" size={20} color={colors.primary} />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.menuItem}
+                onPress={() => navigation.navigate('MinhasDoacoes')}
+              >
+                <Feather name="list" size={24} color={colors.primary} />
+                <Text style={[styles.menuTitle, { marginLeft: 12, flex: 1 }]}>
+                  Histórico de Doações
+                </Text>
+              </TouchableOpacity>
+            </>
+          )}
 
           <TouchableOpacity
             style={styles.menuItem}
@@ -103,23 +127,7 @@ export default function ContaScreen() {
             <Feather name="chevron-right" size={20} color={colors.primary} />
           </TouchableOpacity>
         </View>
-
-        {user.tp_usuario === 2 && (
-          <>
-            <Text style={styles.sectionHeader}>DOADOR</Text>
-            <View style={styles.menuSection}>
-              <TouchableOpacity
-                style={styles.menuItem}
-                onPress={() => navigation.navigate('AddDonation')}
-              >
-                <Feather name="plus-circle" size={24} color={colors.primary} />
-                <Text style={[styles.menuTitle, { marginLeft: 12 }]}>
-                  Adicionar Doação
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </>
-        )}
+        
       </ScrollView>
 
       <View style={{ paddingBottom: insets.bottom }}>

@@ -33,26 +33,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setPasswordAuth(null);
   };
 
+  // --- FUNÇÃO DE LOGIN ATUALIZADA ---
+  // Ela não faz mais validação de senha. Ela confia na api.login()
+  // para fazer isso no backend.
   const login = async (loginInput: string, senha: string) => {
     try {
-      let usuario: User;
+      // Agora a lógica de negócio está no backend
+      // A API vai validar a senha e:
+      // 1. Retornar o usuário se o login for válido.
+      // 2. Disparar um erro se o login for inválido.
+      const usuario = await api.login(loginInput, senha);
 
-      if (loginInput.includes('@')) {
-        usuario = await api.getUserByEmail(loginInput);
-      } else {
-        usuario = await api.getUserByUsername(loginInput);
-      }
-      
-      if (usuario && usuario.senha === senha) {
-        setUser(usuario);
-        setPasswordAuth(senha);
-        return { success: true };
-      } else {
-        return { success: false, message: 'Login ou senha incorretos' };
-      }
+      setUser(usuario);
+      setPasswordAuth(senha); // Ainda guardamos a senha para a tela "AlterarDados"
+      return { success: true };
+
     } catch (error: any) {
       console.error("Erro no login:", error);
-      return { success: false, message: 'Login ou senha incorretos' };
+      // A mensagem de erro vem direto da api.login
+      return { success: false, message: error.message || 'Email ou senha incorretos' };
     }
   };
 

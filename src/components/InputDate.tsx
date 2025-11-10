@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Platform, ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 
@@ -8,9 +8,10 @@ interface Props {
   placeholder: string;
   value: string;
   onChange: (dateString: string) => void;
+  style?: ViewStyle; 
 }
 
-export default function InputDate({ icon, placeholder, value, onChange }: Props) {
+export default function InputDate({ icon, placeholder, value, onChange, style }: Props) {
   const [showPicker, setShowPicker] = useState(false);
 
   const onChangeDate = (event: DateTimePickerEvent, selectedDate?: Date) => {
@@ -31,7 +32,7 @@ export default function InputDate({ icon, placeholder, value, onChange }: Props)
   const displayText = value ? formatDateForDisplay(value) : placeholder;
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, style]}>
       <Ionicons name={icon as any} size={20} style={styles.icon} />
       <TouchableOpacity style={styles.touchable} onPress={() => setShowPicker(true)}>
         <Text style={[styles.text, !value && styles.placeholder]}>
@@ -61,7 +62,7 @@ const styles = StyleSheet.create({
     padding: 12,
     alignItems: 'center',
     marginBottom: 12,
-    width: 355,
+    // width: 355, // REMOVA ESTA LINHA
     height: 65,
   },
   icon: {

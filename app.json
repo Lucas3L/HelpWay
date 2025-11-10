@@ -1,7 +1,8 @@
 {
   "expo": {
-    "name": "my-app",
-    "slug": "my-app",
+    "name": "helpway",
+    "slug": "helpway",
+    "scheme": "helpway",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -30,6 +31,9 @@
       "eas": {
         "projectId": "2d5d7a9f-6091-40a4-a483-7e6b90c37716"
       }
-    }
+    },
+    "plugins": [
+      "expo-web-browser"
+    ]
   }
 }

@@ -1,4 +1,3 @@
-// src/components/DonationCard.tsx
 import React from 'react';
 import { View, Text, Image, StyleSheet } from 'react-native';
 import Slider from '@react-native-community/slider';
@@ -13,7 +12,20 @@ interface Props {
 }
 
 export default function DonationCard({ imageUri, title, subtitle, raised, goal, types }: Props) {
-  const percentage = Math.min((raised / goal) * 100, 100);
+  
+  // 1. Proteção contra valores nulos ou undefined
+  const metaNumerica = goal || 0;
+  const arrecadadoNumerico = raised || 0;
+
+  // 2. Lógica de cálculo que evita o NaN
+  let percentageValue = 0;
+  if (metaNumerica > 0) {
+    percentageValue = (arrecadadoNumerico / metaNumerica) * 100;
+  }
+
+  // 3. Garante que o valor final não passe de 100
+  const percentage = Math.min(percentageValue, 100);
+  const percentageExibida = Math.round(percentage);
 
   return (
     <View style={styles.card}>
@@ -33,9 +45,12 @@ export default function DonationCard({ imageUri, title, subtitle, raised, goal, 
             maximumTrackTintColor="#ccc"
             thumbTintColor="#2D4BFF"
           />
-          <Text style={styles.percentage}>{Math.round(percentage)}%</Text>
+          {/* 4. Exibe o valor formatado, garantindo 0 se for NaN */}
+          <Text style={styles.percentage}>{isNaN(percentageExibida) ? 0 : percentageExibida}%</Text>
         </View>
-        <Text style={styles.values}>R$ {raised} / R$ {goal}</Text>
+        <Text style={styles.values}>
+          R$ {arrecadadoNumerico.toLocaleString('pt-BR')} / R$ {metaNumerica.toLocaleString('pt-BR')}
+        </Text>
 
         <View style={styles.typesContainer}>
           {types.map((type, idx) => (

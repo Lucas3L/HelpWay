@@ -6,19 +6,23 @@ import {api} from '../services/api';
 
 export type Donation = {
   id: string;
-  title: string;
-  subtitle?: string;
-  raised: number;
-  goal: number;
-  imageUri: string;
-  types: string[];
-  location: { latitude: number; longitude: number };
-  description: string;
+  titulo: string;
+  subtitulo?: string;
+  valor_levantado: number;
+  meta_doacoes: number;
+  imagem_base64: string;
+  descricao: string;
+  fg_dinheiro: boolean;
+  fg_alimentacao: boolean;
+  fg_vestuario: boolean;
+  localizacao?: { latitude: number; longitude: number };
+  chave_pix?: string; // ADICIONADA ESTA LINHA
+  types?: string[]; 
 };
 
 type DonationsContextType = {
   donations: Donation[];
-  addDonation: (donation: Omit<Donation, 'id'>) => Promise<void>;
+  addDonation: (donation: any) => Promise<void>; 
   updateDonation: (id: string, amount: number) => void;
 };
 
@@ -32,64 +36,77 @@ export const DonationsProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [donations, setDonations] = useState<Donation[]>([
     {
       id: '1',
-      title: 'Ajude o RS',
-      subtitle: 'Enchentes no Sul do Brasil',
-      raised: 3000,
-      goal: 10000,
-      imageUri: Image.resolveAssetSource(ajudeRsImage).uri,
-      types: ['Alimentos', 'Roupas'],
-      location: {
+      titulo: 'Ajude o RS',
+      subtitulo: 'Enchentes no Sul do Brasil',
+      valor_levantado: 3000,
+      meta_doacoes: 10000,
+      imagem_base64: Image.resolveAssetSource(ajudeRsImage).uri,
+      descricao: 'Estamos arrecadando agasalhos para doar neste inverno.',
+      fg_dinheiro: false,
+      fg_alimentacao: true,
+      fg_vestuario: true,
+      chave_pix: 'doe@ajuders.org', // Exemplo
+      localizacao: {
         latitude: -30.0346,
         longitude: -51.2177,
       },
-      description: 'Estamos arrecadando agasalhos para doar neste inverno.',
     },
     {
       id: '2',
-      title: 'Ajuda Médica',
-      subtitle: 'Médicos sem Fronteiras',
-      raised: 5000,
-      goal: 15000,
-      imageUri: Image.resolveAssetSource(doctorsImage).uri,
-      types: ['Medicamentos'],
-      location: {
+      titulo: 'Ajuda Médica',
+      subtitulo: 'Médicos sem Fronteiras',
+      valor_levantado: 5000,
+      meta_doacoes: 15000,
+      imagem_base64: Image.resolveAssetSource(doctorsImage).uri,
+      descricao: 'Estamos comprando medicamentos.',
+      fg_dinheiro: true,
+      fg_alimentacao: false,
+      fg_vestuario: false,
+      chave_pix: '123.456.789-00', // Exemplo
+      localizacao: {
         latitude: -23.5505,
         longitude: -46.6333,
       },
-      description: 'Estamos comprando medicamentos.',
     },
   ]);
 
-  const addDonation = async (donationData: Omit<Donation, 'id' | 'raised'>) => {
+  const addDonation = async (donationData: any) => {
+    
     const donationPayload = {
-      titulo: donationData.title,
-      subtitulo: donationData.subtitle,
-      descricao: donationData.description,
-      imagem_url: donationData.imageUri,
-      meta_doacoes: donationData.goal,
+      titulo: donationData.titulo,
+      subtitulo: donationData.subtitulo,
+      descricao: donationData.descricao,
+      imagem_base64: donationData.imagem_base64,
+      meta_doacoes: donationData.meta_doacoes,
       valor_levantado: 0,
       fg_dinheiro: donationData.types.includes('Dinheiro'),
-      fg_alimentacao: donationData.types.includes('Alimentos'),
-      fg_vestuario: donationData.types.includes('Roupas'),
+      fg_alimentacao: donationData.types.includes('Alimentação'),
+      fg_vestuario: donationData.types.includes('Utensílio'),
+      chave_pix: donationData.chave_pix, // Adicionado
       localizacao: {
         latitude: donationData.location.latitude,
         longitude: donationData.location.longitude,
       },
+      id_organizador: donationData.id_organizador,
     };
 
     try {
-      const newDonationFromApi = await api.createDonation(donationPayload);
-
+      const newDonationFromApi = await api.criarCampanha(donationPayload);
+      
       const newDonationForState: Donation = {
+        ...newDonationFromApi,
         id: newDonationFromApi.id,
-        title: newDonationFromApi.titulo,
-        subtitle: newDonationFromApi.subtitulo,
-        raised: newDonationFromApi.valor_levantado,
-        goal: newDonationFromApi.meta_doacoes,
-        imageUri: newDonationFromApi.imagem_url,
-        description: newDonationFromApi.descricao,
-        location: newDonationFromApi.localizacao,
-        types: donationData.types, 
+        titulo: newDonationFromApi.titulo,
+        subtitulo: newDonationFromApi.subtitulo,
+        valor_levantado: newDonationFromApi.valor_levantado,
+        meta_doacoes: newDonationFromApi.meta_doacoes,
+        imagem_base64: newDonationFromApi.imagem_base64,
+        descricao: newDonationFromApi.descricao,
+        fg_dinheiro: newDonationFromApi.fg_dinheiro,
+        fg_alimentacao: newDonationFromApi.fg_alimentacao,
+        fg_vestuario: newDonationFromApi.fg_vestuario,
+        localizacao: newDonationFromApi.localizacao,
+        chave_pix: newDonationFromApi.chave_pix,
       };
       
       setDonations(prev => [...prev, newDonationForState]);
@@ -104,7 +121,7 @@ export const DonationsProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setDonations(prev =>
       prev.map(donation =>
         donation.id === id
-          ? { ...donation, raised: donation.raised + amount }
+          ? { ...donation, valor_levantado: donation.valor_levantado + amount }
           : donation
       )
     );
