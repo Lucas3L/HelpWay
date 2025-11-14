@@ -16,6 +16,8 @@ export default StyleSheet.create({
   emptyText: {
     fontSize: 16,
     color: colors.textLight,
+    marginTop: 10,
+    textAlign: 'center',
   },
   header: {
     flexDirection: 'row',
@@ -41,14 +43,15 @@ export default StyleSheet.create({
   dateRangeContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    gap: 10, // Espaço entre os inputs de data
+    gap: 10,
   },
   dateInput: {
-    flex: 1, // Faz os inputs de data dividirem o espaço
+    flex: 1,
     marginBottom: 0,
-    width: 'auto', // Permite que o flex: 1 funcione
+    width: 'auto',
   },
-  itemContainer: {
+  
+  card: {
     backgroundColor: '#fff',
     borderRadius: 12,
     padding: 15,
@@ -58,32 +61,38 @@ export default StyleSheet.create({
     alignItems: 'center',
     elevation: 2,
     shadowColor: '#000',
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.05,
     shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 1 },
   },
-  itemTextContainer: {
+  cardIcon: {
+    width: 45,
+    height: 45,
+    borderRadius: 22.5,
+    backgroundColor: '#f0f2ff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  cardBody: {
     flex: 1,
   },
-  itemTitle: {
+  cardTitle: {
     fontSize: 16,
     fontWeight: 'bold',
     color: colors.text,
   },
-  itemSubtitle: {
-    fontSize: 14,
+  cardInfo: {
+    fontSize: 13,
     color: colors.textLight,
     marginTop: 2,
   },
-  itemInfo: {
-    fontSize: 13,
-    color: '#6c757d',
-    marginTop: 8,
+  cardValue: {
+    paddingLeft: 10,
   },
-  certificateButton: {
-    backgroundColor: colors.primary,
-    padding: 12,
-    borderRadius: 30,
-    marginLeft: 10,
+  cardAmount: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: colors.primary,
   },
 });

@@ -212,10 +212,6 @@ export default function Map() {
 
         {routeCoords.length > 0 && <Polyline coordinates={routeCoords} strokeWidth={5} strokeColor="#4B4DED" />}
       </MapView>
-      
-      <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-        <Ionicons name="arrow-back" size={24} color="#333" />
-      </TouchableOpacity>
 
       {isSelectionMode ? (
         <View style={styles.selectionContainer}>

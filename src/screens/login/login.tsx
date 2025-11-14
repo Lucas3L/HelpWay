@@ -51,7 +51,7 @@ export default function LoginScreen() {
       <TouchableOpacity
         style={styles.googleButton}
         onPress={vm.handleGoogleLoginPress}
-        disabled={!vm.googleAuthRequest}
+        disabled={!vm.googleAuthRequest || vm.isLoading}
       >
         <Image
           source={require('../../../assets/google-logo.png')}

@@ -11,14 +11,15 @@ import { RootStackParamList } from '../navigation';
 import styles from '../styles/HistoricoDoacoes';
 import Input from '../components/Input';
 import InputDate from '../components/InputDate';
+import { colors } from '../styles';
 
 type NavProp = NativeStackNavigationProp<RootStackParamList, 'HistoricoDoacoes'>;
 type HistRouteProp = RouteProp<RootStackParamList, 'HistoricoDoacoes'>;
 
 export type DoacaoFeita = {
   id: string;
-  donationName: string;
-  organizerName: string;
+  titulo_campanha: string;
+  nome_organizador: string;
   donorName?: string;
   valor: number;
   date: string;
@@ -44,7 +45,6 @@ const formatarDataISO = (dateString: string | null | undefined): string => {
   if (isNaN(data.getTime())) { return ''; }
   return data.toISOString().split('T')[0];
 };
-
 
 export default function HistoricoDoacoesTela() {
   const navigation = useNavigation<NavProp>();
@@ -76,8 +76,8 @@ export default function HistoricoDoacoesTela() {
           }
         }
         setHistorico(data || []);
-      } catch (error) {
-        Alert.alert('Erro', 'Não foi possível carregar o histórico.');
+      } catch (error: any) {
+        Alert.alert('Erro', error.message || 'Não foi possível carregar o histórico.');
         setHistorico([]);
       } finally {
         setIsLoading(false);
@@ -106,8 +106,8 @@ export default function HistoricoDoacoesTela() {
       let nomeDoItem = '';
       if ('donorName' in item) {
         nomeDoItem = (item.donorName || '');
-      } else {
-        nomeDoItem = (item.donationName || '') + ' ' + (item.organizerName || '');
+      } else if ('titulo_campanha' in item) {
+        nomeDoItem = (item.titulo_campanha || '') + ' ' + (item.nome_organizador || '');
       }
       const matchNome = !buscaNome || nomeDoItem.toLowerCase().includes(nomeLower);
 
@@ -116,36 +116,53 @@ export default function HistoricoDoacoesTela() {
   }, [buscaNome, dataDe, dataAte, historico]);
 
   const renderItemDoador = ({ item }: { item: DoacaoFeita }) => (
-    <View style={styles.itemContainer}>
-      <View style={styles.itemTextContainer}>
-        <Text style={styles.itemTitle}>Doado para: {item.donationName}</Text>
-        <Text style={styles.itemSubtitle}>Organizador: {item.organizerName}</Text>
-        <Text style={styles.itemInfo}>
-          Valor: R$ {(item.valor || 0).toFixed(2)} - Data: {formatarDataSegura(item.date)}
+    <TouchableOpacity 
+      style={styles.card}
+      onPress={() => navigation.navigate('CertificadoDoacao', { 
+          donationInfo: {
+            id: item.id,
+            donationName: item.titulo_campanha,
+            organizerName: item.nome_organizador,
+            donorName: user?.nome,
+            valor: item.valor,
+            date: item.date
+          } 
+        })}
+    >
+      <View style={styles.cardIcon}>
+        <Feather name="award" size={24} color={colors.primary} />
+      </View>
+      <View style={styles.cardBody}>
+        <Text style={styles.cardTitle} numberOfLines={1}>{item.titulo_campanha}</Text>
+        <Text style={styles.cardInfo}>
+          Para: {item.nome_organizador} | {formatarDataSegura(item.date)}
         </Text>
       </View>
-      <TouchableOpacity
-        style={styles.certificateButton}
-        onPress={() => navigation.navigate('CertificadoDoacao', { donationInfo: { ...item, donorName: user?.nome } })}
-      >
-        <Feather name="award" size={24} color="#fff" />
-      </TouchableOpacity>
-    </View>
+      <View style={styles.cardValue}>
+        <Text style={styles.cardAmount}>R$ {(item.valor || 0).toFixed(2)}</Text>
+      </View>
+    </TouchableOpacity>
   );
 
   const renderItemOrganizador = ({ item }: { item: DoacaoRecebida }) => (
-    <View style={styles.itemContainer}>
-      <View style={styles.itemTextContainer}>
-        <Text style={styles.itemTitle}>Doação de: {item.donorName || 'Doador Anônimo'}</Text>
-        <Text style={styles.itemInfo}>
-          Valor: R$ {(item.valor || 0).toFixed(2)} - Data: {formatarDataSegura(item.date)}
+    <View style={styles.card}>
+      <View style={styles.cardIcon}>
+        <Feather name="user" size={24} color="#555" />
+      </View>
+      <View style={styles.cardBody}>
+        <Text style={styles.cardTitle}>{item.donorName || 'Doador Anônimo'}</Text>
+        <Text style={styles.cardInfo}>
+          Data: {formatarDataSegura(item.date)}
         </Text>
+      </View>
+      <View style={styles.cardValue}>
+        <Text style={styles.cardAmount}>+ R$ {(item.valor || 0).toFixed(2)}</Text>
       </View>
     </View>
   );
 
   if (isLoading) {
-    return <View style={styles.centralizado}><ActivityIndicator size="large" color="#2D4BFF" /></View>;
+    return <View style={styles.centralizado}><ActivityIndicator size="large" color={colors.primary} /></View>;
   }
 
   return (
@@ -193,6 +210,7 @@ export default function HistoricoDoacoesTela() {
         renderItem={user?.tp_usuario === 1 ? renderItemDoador as any : renderItemOrganizador as any}
         ListEmptyComponent={
           <View style={styles.centralizado}>
+             <Feather name="inbox" size={40} color="#ccc" />
             <Text style={styles.emptyText}>
               {(buscaNome || dataDe || dataAte) ? 'Nenhum resultado encontrado.' : 'Nenhuma doação no seu histórico.'}
             </Text>

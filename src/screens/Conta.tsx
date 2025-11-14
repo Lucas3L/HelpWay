@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   Image,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -22,20 +23,21 @@ type NavProp = NativeStackNavigationProp<RootStackParamList, 'Conta'>;
 export default function ContaScreen() {
   const navigation = useNavigation<NavProp>();
   const insets = useSafeAreaInsets();
-  const { user, logout } = useAuth();
+  
+  const { user, logout, loginFoiManual, habilitarBiometria, clearLoginManualFlag } = useAuth();
 
-  useEffect(() => {
-    if (!user) {
-      navigation.replace('Login');
-    }
-  }, [user, navigation]);
+  // ESTE useEffect NÃO é para navegação.
+  // Ele é o "guarda" que pergunta sobre biometria.
+ 
 
   const handleLogout = () => {
     logout();
-    navigation.replace('Login');
+    // navigation.replace('Login'); // <-- NAVEGAÇÃO MANUAL REMOVIDA
+    // O App.tsx vai cuidar disso automaticamente
   };
 
   if (!user) {
+    // Este 'if' é uma proteção caso a navegação automática demore.
     return (
       <SafeAreaView style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
         <ActivityIndicator size="large" color={colors.primary} />
@@ -76,11 +78,10 @@ export default function ContaScreen() {
             <Feather name="chevron-right" size={20} color={colors.primary} />
           </TouchableOpacity>
 
-          {/* SE FOR DOADOR (TIPO 1), MOSTRA O HISTÓRICO DELE */}
           {user.tp_usuario === 1 && (
             <TouchableOpacity 
               style={styles.menuItem}
-              onPress={() => navigation.navigate('HistoricoDoacoes', { campaignId: undefined })} // Passa undefined
+              onPress={() => navigation.navigate('HistoricoDoacoes', { campaignId: undefined })}
             >
               <Feather name="clock" size={24} color={colors.primary} />
               <View style={styles.menuTextContainer}>
@@ -90,7 +91,6 @@ export default function ContaScreen() {
             </TouchableOpacity>
           )}
 
-          {/* SE FOR ORGANIZADOR (TIPO 2), MOSTRA OS MENUS DELE */}
           {user.tp_usuario === 2 && (
             <>
               <TouchableOpacity
@@ -130,7 +130,13 @@ export default function ContaScreen() {
         
       </ScrollView>
 
-      <View style={{ paddingBottom: insets.bottom }}>
+      <View style={{
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        paddingBottom: insets.bottom 
+      }}>
         <TabBar
           tabs={[
             {

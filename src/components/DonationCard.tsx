@@ -1,38 +1,42 @@
 import React from 'react';
 import { View, Text, Image, StyleSheet } from 'react-native';
 import Slider from '@react-native-community/slider';
+import { colors, fonts } from '../styles';
 
+// 1. Interface atualizada para os nomes da API
 interface Props {
   imageUri: string;
-  title: string;
-  subtitle?: string;
-  raised: number;
-  goal: number;
+  titulo: string;
+  subtitulo?: string; // Este campo é o "Nome do Usuário que Solicitou"
+  valor_levantado: number;
+  meta_doacoes: number;
   types: string[];
 }
 
-export default function DonationCard({ imageUri, title, subtitle, raised, goal, types }: Props) {
+export default function DonationCard({ imageUri, titulo, subtitulo, valor_levantado, meta_doacoes, types }: Props) {
   
-  // 1. Proteção contra valores nulos ou undefined
-  const metaNumerica = goal || 0;
-  const arrecadadoNumerico = raised || 0;
+  const metaNumerica = meta_doacoes || 0;
+  const arrecadadoNumerico = valor_levantado || 0;
 
-  // 2. Lógica de cálculo que evita o NaN
   let percentageValue = 0;
-  if (metaNumerica > 0) {
+  // 2. CORREÇÃO DO BUG "0%":
+  // Se o valor arrecadado for maior que 0 e a meta for maior que 0, calcula
+  if (arrecadadoNumerico > 0 && metaNumerica > 0) {
     percentageValue = (arrecadadoNumerico / metaNumerica) * 100;
   }
 
-  // 3. Garante que o valor final não passe de 100
   const percentage = Math.min(percentageValue, 100);
-  const percentageExibida = Math.round(percentage);
+  // Usar Math.floor() garante que 0.26% (R$ 130 / R$ 50.000) seja exibido como 0%
+  const percentageExibida = Math.floor(percentage);
 
   return (
     <View style={styles.card}>
       <Image source={{ uri: imageUri }} style={styles.image} />
       <View style={styles.content}>
-        <Text style={styles.title}>{title}</Text>
-        {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
+        <Text style={styles.title}>{titulo}</Text>
+        
+        {/* 3. CORREÇÃO DO TÍTULO: Mostra o "Solicitador" */}
+        {subtitulo && <Text style={styles.subtitle}>{subtitulo}</Text>}
 
         <View style={styles.progressContainer}>
           <Slider
@@ -41,11 +45,10 @@ export default function DonationCard({ imageUri, title, subtitle, raised, goal, 
             maximumValue={100}
             disabled
             style={styles.slider}
-            minimumTrackTintColor="#2D4BFF"
+            minimumTrackTintColor={colors.primary}
             maximumTrackTintColor="#ccc"
-            thumbTintColor="#2D4BFF"
+            thumbTintColor={colors.primary}
           />
-          {/* 4. Exibe o valor formatado, garantindo 0 se for NaN */}
           <Text style={styles.percentage}>{isNaN(percentageExibida) ? 0 : percentageExibida}%</Text>
         </View>
         <Text style={styles.values}>
@@ -68,7 +71,7 @@ const styles = StyleSheet.create({
   card: {
     marginHorizontal: 25,
     marginVertical: 12, 
-    backgroundColor: '#fff',
+    backgroundColor: colors.card,
     borderRadius: 12,
     overflow: 'hidden',
     shadowColor: '#000',
@@ -86,10 +89,11 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 14, 
     fontWeight: 'bold',
+    color: colors.text,
   },
   subtitle: {
     fontSize: 12,
-    color: '#666',
+    color: colors.textLight,
     marginBottom: 6,
   },
   progressContainer: {
@@ -105,11 +109,12 @@ const styles = StyleSheet.create({
     marginLeft: 6,
     fontSize: 12,
     fontWeight: 'bold',
+    color: colors.text,
   },
   values: {
     marginTop: 4,
     fontSize: 11,
-    color: '#777',
+    color: colors.textLight,
   },
   typesContainer: {
     flexDirection: 'row',
@@ -126,7 +131,7 @@ const styles = StyleSheet.create({
   },
   typeText: {
     fontSize: 11,
-    color: '#2D4BFF',
+    color: colors.primary,
     fontWeight: '600',
   },
 });

@@ -17,7 +17,7 @@ import InputPassword from '../../components/InputPassword';
 import Button from '../../components/Button';
 import InputDate from '../../components/InputDate';
 import styles from '../../styles/register';
-import useRegisterViewModel from './useRegisterViewModel'; // Importa o ViewModel
+import useRegisterViewModel from './useRegisterViewModel';
 
 export default function Register() {
   const vm = useRegisterViewModel();

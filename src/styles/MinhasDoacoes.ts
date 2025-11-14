@@ -11,14 +11,23 @@ export default StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingTop: 10,
+    paddingBottom: 10,
+  },
+  backButton: {
+    padding: 5,
+  },
   titulo: {
     fontSize: fonts.sizes.h2,
     fontWeight: fonts.weights.bold,
     color: colors.text,
     textAlign: 'center',
-    marginVertical: 20,
   },
-  // Estilos para o novo Card com botões
   card: {
     backgroundColor: colors.card,
     borderRadius: 12,
@@ -38,7 +47,24 @@ export default StyleSheet.create({
     fontWeight: 'bold',
     color: colors.text,
   },
-  cardSubtitle: {
+  // NOVO ESTILO: Para o "Solicitado por:"
+  cardSolicitador: {
+    fontSize: 13,
+    color: colors.textLight,
+    marginTop: 2,
+    marginBottom: 8,
+  },
+  // NOVO ESTILO: Para alinhar Meta e Arrecadado
+  cardValoresContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  cardValores: {
+    fontSize: 14,
+    color: colors.text,
+    marginTop: 4,
+  },
+  cardSubtitle: { // (Este estilo era usado para Meta/Arrecadado, renomeei para cardValores)
     fontSize: 14,
     color: colors.textLight,
     marginTop: 4,

@@ -91,5 +91,19 @@ export default StyleSheet.create({
     color: colors.primary,
     textAlign: 'center',
   },
+  biometricButton: {
+    flexDirection: 'row',
+    backgroundColor: '#343a40', // Cor escura para diferenciar
+    paddingVertical: 12,
+    borderRadius: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+  },
+  biometricText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
 
 });

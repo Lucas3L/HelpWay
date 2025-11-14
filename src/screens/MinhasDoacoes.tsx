@@ -3,13 +3,13 @@ import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, Alert } from
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useIsFocused } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Feather } from '@expo/vector-icons';
+import { Feather, Ionicons } from '@expo/vector-icons';
 
 import { RootStackParamList } from '../navigation';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 import { Donation } from '../context/DonationsContext';
-import styles from '../styles/MinhasDoacoes'; 
+import styles from '../styles/MinhasDoacoes';
 import { colors } from '../styles';
 
 type NavProp = NativeStackNavigationProp<RootStackParamList, 'MinhasDoacoes'>;
@@ -44,18 +44,24 @@ export default function MinhasDoacoesTela() {
 
   const renderItemCampanha = ({ item }: { item: Donation }) => (
     <View style={styles.card}>
-      {/* Informações da Campanha */}
       <View style={styles.cardInfo}>
         <Text style={styles.cardTitle}>{item.titulo}</Text>
-        <Text style={styles.cardSubtitle}>
-          Meta: R$ {(item.meta_doacoes || 0).toFixed(2)}
+        
+        {/* CORREÇÃO: Adicionando o Subtítulo (Solicitador) */}
+        <Text style={styles.cardSolicitador}>
+          Solicitado por: {item.subtitulo || 'Não informado'}
         </Text>
-        <Text style={styles.cardSubtitle}>
-          Arrecadado: R$ {(item.valor_levantado || 0).toFixed(2)}
-        </Text>
+        
+        <View style={styles.cardValoresContainer}>
+          <Text style={styles.cardValores}>
+            Meta: R$ {(item.meta_doacoes || 0).toFixed(2)}
+          </Text>
+          <Text style={styles.cardValores}>
+            Arrecadado: R$ {(item.valor_levantado || 0).toFixed(2)}
+          </Text>
+        </View>
       </View>
 
-      {/* Botões de Ação */}
       <View style={styles.cardActions}>
         <TouchableOpacity
           style={styles.actionButton}
@@ -86,7 +92,14 @@ export default function MinhasDoacoesTela() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.titulo}>Histórico de Doações</Text>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+          <Ionicons name="arrow-back" size={24} color="#333" />
+        </TouchableOpacity>
+        <Text style={styles.titulo}>Minhas Doações</Text>
+        <View style={{ width: 40 }} /> 
+      </View>
+
       <FlatList
         data={minhasDoacoes}
         keyExtractor={(item) => item.id}

@@ -23,17 +23,6 @@ import { Donation as Campanha } from '../context/DonationsContext';
 type NavProp = NativeStackNavigationProp<RootStackParamList, 'SearchDonation'>;
 type FilterType = 'REGIONAL' | 'NACIONAL' | 'MUNDIAL';
 
-type CardDataType = {
-  id: string;
-  title: string;
-  subtitle?: string;
-  raised: number;
-  goal: number;
-  imageUri: string;
-  types: string[];
-  apiData: Campanha; 
-};
-
 export default function SearchDonationScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavProp>();
@@ -69,8 +58,6 @@ export default function SearchDonationScreen() {
       try {
         const campaignsFromApi = await api.getCampanhas(); 
         
-        // --- CORREÇÃO APLICADA AQUI ---
-        // Trata meta_doacoes e valor_levantado nulos como 0
         const activeCampaigns = campaignsFromApi.filter(
           (c: Campanha) => (c.meta_doacoes || 0) > (c.valor_levantado || 0)
         );
@@ -121,47 +108,35 @@ export default function SearchDonationScreen() {
     else if (value === 'MUNDIAL') setDistanceFilter(sliderMaximumValue);
   };
 
-  const filteredCampaigns = useMemo((): CardDataType[] => {
+  const filteredCampaigns = useMemo((): Campanha[] => {
     return allCampaigns
-      .map((campaign) => {
+      .filter((campaign) => {
+        const searchLower = search.toLowerCase();
+        const matchesSearch =
+          campaign.titulo.toLowerCase().includes(searchLower) ||
+          (campaign.subtitulo?.toLowerCase() ?? '').includes(searchLower);
+
+        const distance =
+          userLocation && campaign.localizacao?.latitude !== 0
+            ? getDistanceKm(
+                userLocation.latitude,
+                userLocation.longitude,
+                campaign.localizacao!.latitude,
+                campaign.localizacao!.longitude
+              )
+            : Infinity;
+
+        const withinDistance = distance <= distanceFilter;
+
         const types = [
           campaign.fg_dinheiro && 'Dinheiro',
           campaign.fg_alimentacao && 'Alimentação',
           campaign.fg_vestuario && 'Utensílio',
         ].filter(Boolean) as string[];
         
-        return {
-          id: campaign.id,
-          title: campaign.titulo,
-          subtitle: campaign.subtitulo,
-          raised: campaign.valor_levantado,
-          goal: campaign.meta_doacoes,
-          imageUri: campaign.imagem_base64,
-          types: types,
-          apiData: campaign,
-        };
-      })
-      .filter((campaign) => {
-        const searchLower = search.toLowerCase();
-        const matchesSearch =
-          campaign.title.toLowerCase().includes(searchLower) ||
-          (campaign.subtitle?.toLowerCase() ?? '').includes(searchLower);
-
-        const distance =
-          userLocation && campaign.apiData.localizacao?.latitude !== 0
-            ? getDistanceKm(
-                userLocation.latitude,
-                userLocation.longitude,
-                campaign.apiData.localizacao!.latitude,
-                campaign.apiData.localizacao!.longitude
-              )
-            : Infinity;
-
-        const withinDistance = distance <= distanceFilter;
-
         const matchesType =
           selectedTypes.length === 0 ||
-          selectedTypes.some((type) => campaign.types.includes(type));
+          selectedTypes.some((type) => types.includes(type));
 
         return matchesSearch && withinDistance && matchesType;
       });
@@ -193,20 +168,28 @@ export default function SearchDonationScreen() {
             keyExtractor={(item) => item.id}
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.listContent}
-            renderItem={({ item }) => (
-              <TouchableOpacity onPress={() => navigation.navigate('DonationDetail', { 
-                donation: item.apiData
-                })}>
-                <DonationCard
-                  imageUri={item.imageUri ? `data:image/jpeg;base64,${item.imageUri}` : ''}
-                  title={item.title}
-                  subtitle={item.subtitle}
-                  raised={item.raised}
-                  goal={item.goal}
-                  types={item.types}
-                />
-              </TouchableOpacity>
-            )}
+            renderItem={({ item }) => {
+              const types = [
+                item.fg_dinheiro && 'Dinheiro',
+                item.fg_alimentacao && 'Alimentação',
+                item.fg_vestuario && 'Utensílio',
+              ].filter(Boolean) as string[];
+              
+              return (
+                <TouchableOpacity onPress={() => navigation.navigate('DonationDetail', { 
+                  donation: item
+                  })}>
+                  <DonationCard
+                    imageUri={item.imagem_base64 ? `data:image/jpeg;base64,${item.imagem_base64}` : ''}
+                    titulo={item.titulo}
+                    subtitulo={item.subtitulo}
+                    valor_levantado={item.valor_levantado}
+                    meta_doacoes={item.meta_doacoes}
+                    types={types}
+                  />
+                </TouchableOpacity>
+              )
+            }}
             ListEmptyComponent={
               <View style={styles.emptyListContainer}>
                 <Text style={styles.emptyListText}>Nenhuma campanha encontrada para os filtros.</Text>

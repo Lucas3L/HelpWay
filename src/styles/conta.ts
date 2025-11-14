@@ -8,7 +8,7 @@ export default StyleSheet.create({
   },
   scroll: {
     paddingHorizontal: 16,
-    paddingTop: 32,
+    //paddingTop: 32,
     paddingBottom: 16,
   },
   profileCard: {
@@ -18,6 +18,7 @@ export default StyleSheet.create({
     padding: 20,
     alignItems: 'center',
     marginBottom: 24,
+    marginTop: 16,
   },
   profileText: {
     flex: 1,

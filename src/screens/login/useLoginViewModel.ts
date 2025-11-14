@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import { Alert } from 'react-native';
 import * as Google from 'expo-auth-session/providers/google';
 import * as WebBrowser from 'expo-web-browser';
+import * as LocalAuthentication from 'expo-local-authentication';
 
 import { useAuth } from '../../context/AuthContext';
 import { api } from '../../services/api';
@@ -14,7 +15,8 @@ type NavigationProps = NativeStackNavigationProp<RootStackParamList, 'Login'>;
 
 export default function useLoginViewModel() {
   const navigation = useNavigation<NavigationProps>();
-  const { login, setUser } = useAuth();
+  // CORREÇÃO: O ViewModel não precisa "ouvir" o 'user', só precisa das FUNÇÕES.
+  const { login, setUser, tryBiometricLogin, isBiometricsEnabled } = useAuth();
 
   const [loginInput, setLoginInput] = useState('');
   const [senha, setSenha] = useState('');
@@ -22,6 +24,16 @@ export default function useLoginViewModel() {
   const [isLoading, setIsLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [recoveryEmail, setRecoveryEmail] = useState('');
+  
+  const [canUseBiometrics, setCanUseBiometrics] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      const hasHardware = await LocalAuthentication.hasHardwareAsync();
+      const hasEnrolled = await LocalAuthentication.isEnrolledAsync();
+      setCanUseBiometrics(hasHardware && hasEnrolled && isBiometricsEnabled);
+    })();
+  }, [isBiometricsEnabled]);
 
   const [request, response, promptAsync] = Google.useAuthRequest({
     clientId: 'SEU_WEB_CLIENT_ID_DO_GOOGLE_AQUI',
@@ -34,13 +46,12 @@ export default function useLoginViewModel() {
     }
     setError('');
     setIsLoading(true);
-    
-    const result = await login(loginInput, senha);
 
+    const result = await login(loginInput, senha);
     setIsLoading(false);
+    
     if (result.success) {
-      Alert.alert('Login realizado com sucesso!');
-      navigation.navigate('SearchDonation');
+      // NAVEGAÇÃO MANUAL REMOVIDA (O App.tsx faz isso.)
     } else {
       setError(result.message || 'Erro desconhecido');
     }
@@ -59,7 +70,7 @@ export default function useLoginViewModel() {
            const usuarioExistente = await api.getUserByEmail(userInfo.email);
            setUser(usuarioExistente);
            Alert.alert('Login com Google realizado!');
-           navigation.navigate('SearchDonation');
+           // NAVEGAÇÃO MANUAL REMOVIDA
          } catch (e) {
            console.log('Usuário não encontrado, cadastrando com Google...');
            const novoUsuario = {
@@ -68,13 +79,13 @@ export default function useLoginViewModel() {
              senha: Math.random().toString(36).slice(-10),
              dt_nascimento: '1990-01-01',
              img_usuario: userInfo.picture,
-             tp_usuario: 2,
+             tp_usuario: 2, 
            };
 
            const usuarioCriado = await api.createUser(novoUsuario);
            setUser(usuarioCriado);
            Alert.alert('Bem-vindo!', 'Sua conta foi criada com o Google.');
-           navigation.navigate('SearchDonation');
+           // NAVEGAÇÃO MANUAL REMOVIDA
          }
        } else {
            if (result?.type === 'error') throw new Error(result.error?.message);
@@ -84,6 +95,17 @@ export default function useLoginViewModel() {
        Alert.alert('Erro no Login com Google', error.message || 'Não foi possível autenticar.');
        console.error("Erro Google:", error);
      }
+  };
+
+  const handleBiometricLogin = async () => {
+    setIsLoading(true);
+    const success = await tryBiometricLogin();
+    setIsLoading(false);
+    
+    if (!success) {
+      console.log('Falha na biometria ou credenciais inválidas');
+      // NAVEGAÇÃO MANUAL REMOVIDA
+    }
   };
 
   const goToRegister = () => {
@@ -112,8 +134,10 @@ export default function useLoginViewModel() {
     recoveryEmail,
     setRecoveryEmail,
     googleAuthRequest: request,
+    canUseBiometrics,
     handleLoginPress: validarLogin,
     handleGoogleLoginPress: handleGoogleLogin,
+    handleBiometricLoginPress: handleBiometricLogin,
     handleGoToRegister: goToRegister,
     handleSendRecovery,
   };

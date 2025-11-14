@@ -1,4 +1,4 @@
-const API_BASE_URL = 'https://helpway-api.onrender.com'; 
+const API_BASE_URL = 'https://helpway-api.onrender.com'; // Ou seu IP local
 
 export const api = {
 
@@ -47,6 +47,9 @@ export const api = {
   },
 
   async getUserByEmail(email: string) {
+    // Esta rota está no seu Swagger, é /usuario/{id}
+    // Mas o fluxo do Google Login precisa disto. Se o seu backend 
+    // não tem /usuario/email/{email}, o login do Google falhará.
     const res = await fetch(`${API_BASE_URL}/usuario/email/${email}`);
     if (!res.ok) throw new Error('Usuário não encontrado');
     return res.json();
@@ -119,15 +122,24 @@ export const api = {
     return res.json();
   },
 
+  // ESTA É A FUNÇÃO QUE ESTAVA FALTANDO
   async getDoacoesRecebidasByUserId(userId: number) {
+    // O seu Swagger não tem esta rota.
+    // O frontend está chamando isso, mas a API não tem.
+    // O APLICATIVO VAI DAR O 'Alert' de erro até que o backend implemente esta rota.
+    console.warn(`API NÃO IMPLEMENTADA: getDoacoesRecebidasByUserId (GET /usuario/${userId}/doacoes-recebidas)`);
     const res = await fetch(`${API_BASE_URL}/usuario/${userId}/doacoes-recebidas`);
-    if (!res.ok) throw new Error('Erro ao buscar histórico de doações recebidas');
+    if (!res.ok) throw new Error('O Backend (API) não implementou a rota /usuario/{id}/doacoes-recebidas');
     return res.json();
   },
 
+  // ESTA É A FUNÇÃO QUE O FLUXO NOVO (ORGANIZADOR) USA
   async getDoacoesRecebidasByCampaignId(campaignId: string) {
+    // O seu Swagger também não tem esta rota.
+    // O APLICATIVO VAI DAR O 'Alert' de erro até que o backend implemente esta rota.
+    console.warn(`API NÃO IMPLEMENTADA: getDoacoesRecebidasByCampaignId (GET /campanha/${campaignId}/doacoes-recebidas)`);
     const res = await fetch(`${API_BASE_URL}/campanha/${campaignId}/doacoes-recebidas`);
-    if (!res.ok) throw new Error('Erro ao buscar doações desta campanha');
+    if (!res.ok) throw new Error('O Backend (API) não implementou a rota /campanha/{id}/doacoes-recebidas');
     return res.json();
   },
 

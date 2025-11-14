@@ -94,11 +94,11 @@ export default function useRegisterViewModel() {
         await api.createUser(userData);
         
         const loginResult = await login(email, senha);
-        setIsLoading(false);
+        setIsLoading(false); // CORRIGIDO AQUI
 
         if (loginResult.success) {
             Alert.alert('Sucesso!', 'Cadastro realizado com sucesso!');
-            navigation.replace('SearchDonation');
+            // A navegação agora é automática pelo AuthContext
         } else {
             Alert.alert('Cadastro Realizado', 'Seu cadastro foi concluído. Por favor, faça o login.');
             navigation.navigate('Login');
